@@ -64,6 +64,9 @@ type Plot struct {
 	// Legend is the plot's legend.
 	Legend Legend
 
+	// Style draws the plot with style
+	Style PlotDrawer
+
 	// plotters are drawn by calling their Plot method
 	// after the axes are drawn.
 	plotters []Plotter
@@ -77,6 +80,11 @@ type Plot struct {
 type Plotter interface {
 	// Plot draws the data to a draw.Canvas.
 	Plot(draw.Canvas, *Plot)
+}
+
+// PlotDrawer draws a Plot on a draw.Canvas
+type PlotDrawer interface {
+	DrawPlot(p *Plot, c draw.Canvas)
 }
 
 // DataRanger wraps the DataRange method.
@@ -109,6 +117,7 @@ func New() (*Plot, error) {
 		X:               x,
 		Y:               y,
 		Legend:          legend,
+		Style:           DefaultPlotStyle{},
 	}
 	p.Title.TextStyle = draw.TextStyle{
 		Color: color.Black,
@@ -148,6 +157,46 @@ func (p *Plot) Add(ps ...Plotter) {
 // taken into account when padding the plot so that
 // none of their glyphs are clipped.
 func (p *Plot) Draw(c draw.Canvas) {
+	p.Style.DrawPlot(p, c)
+}
+
+// DataCanvas returns a new draw.Canvas that
+// is the subset of the given draw area into which
+// the plot data will be drawn.
+func (p *Plot) DataCanvas(da draw.Canvas) draw.Canvas {
+	if p.Title.Text != "" {
+		da.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
+		da.Max.Y -= p.Title.Padding
+	}
+	p.X.SanitizeRange()
+	x := HorizontalAxis{p.X}
+	p.Y.SanitizeRange()
+	y := VerticalAxis{p.Y}
+	return PadY(p, PadX(p, da.Crop(y.Size(), x.Size(), 0, 0)))
+}
+
+// DrawGlyphBoxes draws red outlines around the plot's
+// GlyphBoxes.  This is intended for debugging.
+func (p *Plot) DrawGlyphBoxes(c *draw.Canvas) {
+	c.SetColor(color.RGBA{R: 255, A: 255})
+	for _, b := range p.GlyphBoxes(p) {
+		b.Rectangle.Min.X += c.X(b.X)
+		b.Rectangle.Min.Y += c.Y(b.Y)
+		c.Stroke(b.Rectangle.Path())
+	}
+}
+
+// DefaultPlotStyle implements PlotDrawer
+type DefaultPlotStyle struct{}
+
+// Draw draws a plot to a vgdraw.Canvas.
+//
+// Plotters are drawn in the order in which they were
+// added to the plot.  Plotters that  implement the
+// GlyphBoxer interface will have their GlyphBoxes
+// taken into account when padding the plot so that
+// none of their glyphs are clipped.
+func (d DefaultPlotStyle) DrawPlot(p *Plot, c draw.Canvas) {
 	if p.BackgroundColor != nil {
 		c.SetColor(p.BackgroundColor)
 		c.Fill(c.Rectangle.Path())
@@ -168,38 +217,12 @@ func (p *Plot) Draw(c draw.Canvas) {
 	xheight := x.Size()
 	y.Draw(PadY(p, c.Crop(0, xheight, 0, 0)))
 
-	dataC := PadY(p, PadX(p, c.Crop(ywidth, xheight, 0, 0)))
+	datac := PadY(p, PadX(p, c.Crop(ywidth, xheight, 0, 0)))
 	for _, data := range p.plotters {
-		data.Plot(dataC, p)
+		data.Plot(datac, p)
 	}
 
 	p.Legend.Draw(c.Crop(ywidth, 0, 0, 0).Crop(0, xheight, 0, 0))
-}
-
-// DataCanvas returns a new draw.Canvas that
-// is the subset of the given draw area into which
-// the plot data will be drawn.
-func (p *Plot) DataCanvas(da draw.Canvas) draw.Canvas {
-	if p.Title.Text != "" {
-		da.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
-		da.Max.Y -= p.Title.Padding
-	}
-	p.X.SanitizeRange()
-	x := HorizontalAxis{p.X}
-	p.Y.SanitizeRange()
-	y := VerticalAxis{p.Y}
-	return PadY(p, PadX(p, c.Crop(y.Size(), x.Size(), 0, 0)))
-}
-
-// DrawGlyphBoxes draws red outlines around the plot's
-// GlyphBoxes.  This is intended for debugging.
-func (p *Plot) DrawGlyphBoxes(c *draw.Canvas) {
-	c.SetColor(color.RGBA{R: 255, A: 255})
-	for _, b := range p.GlyphBoxes(p) {
-		b.Rectangle.Min.X += c.X(b.X)
-		b.Rectangle.Min.Y += c.Y(b.Y)
-		c.Stroke(b.Rectangle.Path())
-	}
 }
 
 // PadX returns a draw.Canvas that is padded horizontally
