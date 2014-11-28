@@ -168,16 +168,16 @@ func (p *Plot) Draw(c draw.Canvas) {
 // DataCanvas returns a new draw.Canvas that
 // is the subset of the given draw area into which
 // the plot data will be drawn.
-func (p *Plot) DataCanvas(da draw.Canvas) draw.Canvas {
+func (p *Plot) DataCanvas(c draw.Canvas) draw.Canvas {
 	if p.Title.Text != "" {
-		da.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
-		da.Max.Y -= p.Title.Padding
+		c.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
+		c.Max.Y -= p.Title.Padding
 	}
 	p.X.SanitizeRange()
 	x := HorizontalAxis{p.X}
 	p.Y.SanitizeRange()
 	y := VerticalAxis{p.Y}
-	return PadY(p, PadX(p, da.Crop(y.Size(), x.Size(), 0, 0)))
+	return PadY(p, PadX(p, c.Crop(y.Size(), x.Size(), 0, 0)))
 }
 
 // DrawGlyphBoxes draws red outlines around the plot's
