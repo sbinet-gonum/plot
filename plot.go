@@ -164,11 +164,11 @@ func (p *Plot) Draw(c draw.Canvas) {
 	y := VerticalAxis{p.Y}
 
 	ywidth := y.Size()
-	x.Draw(padX(p, c.Crop(ywidth, 0, 0, 0)))
+	x.Draw(PadX(p, c.Crop(ywidth, 0, 0, 0)))
 	xheight := x.Size()
-	y.Draw(padY(p, c.Crop(0, xheight, 0, 0)))
+	y.Draw(PadY(p, c.Crop(0, xheight, 0, 0)))
 
-	dataC := padY(p, padX(p, c.Crop(ywidth, xheight, 0, 0)))
+	dataC := PadY(p, PadX(p, c.Crop(ywidth, xheight, 0, 0)))
 	for _, data := range p.plotters {
 		data.Plot(dataC, p)
 	}
@@ -188,7 +188,7 @@ func (p *Plot) DataCanvas(da draw.Canvas) draw.Canvas {
 	x := HorizontalAxis{p.X}
 	p.Y.SanitizeRange()
 	y := VerticalAxis{p.Y}
-	return padY(p, padX(p, da.Crop(y.Size(), x.Size(), 0, 0)))
+	return PadY(p, PadX(p, da.Crop(y.Size(), x.Size(), 0, 0)))
 }
 
 // DrawGlyphBoxes draws red outlines around the plot's
@@ -202,9 +202,9 @@ func (p *Plot) DrawGlyphBoxes(c *draw.Canvas) {
 	}
 }
 
-// padX returns a draw.Canvas that is padded horizontally
+// PadX returns a draw.Canvas that is padded horizontally
 // so that glyphs will no be clipped.
-func padX(p *Plot, c draw.Canvas) draw.Canvas {
+func PadX(p *Plot, c draw.Canvas) draw.Canvas {
 	glyphs := p.GlyphBoxes(p)
 	l := leftMost(&c, glyphs)
 	xAxis := HorizontalAxis{p.X}
@@ -258,9 +258,9 @@ func leftMost(c *draw.Canvas, boxes []GlyphBox) GlyphBox {
 	return l
 }
 
-// padY returns a draw.Canvas that is padded vertically
+// PadY returns a draw.Canvas that is padded vertically
 // so that glyphs will no be clipped.
-func padY(p *Plot, c draw.Canvas) draw.Canvas {
+func PadY(p *Plot, c draw.Canvas) draw.Canvas {
 	glyphs := p.GlyphBoxes(p)
 	b := bottomMost(&c, glyphs)
 	yAxis := VerticalAxis{p.Y}
