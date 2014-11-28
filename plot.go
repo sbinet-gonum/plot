@@ -188,7 +188,7 @@ func (p *Plot) DataCanvas(da draw.Canvas) draw.Canvas {
 	x := HorizontalAxis{p.X}
 	p.Y.SanitizeRange()
 	y := VerticalAxis{p.Y}
-	return PadY(p, PadX(p, da.Crop(y.Size(), x.Size(), 0, 0)))
+	return PadY(p, PadX(p, c.Crop(y.Size(), x.Size(), 0, 0)))
 }
 
 // DrawGlyphBoxes draws red outlines around the plot's
