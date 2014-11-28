@@ -171,12 +171,12 @@ func (a *Axis) drawTicks() bool {
 
 // A horizontalAxis draws horizontally across the bottom
 // of a plot.
-type horizontalAxis struct {
+type HorizontalAxis struct {
 	Axis
 }
 
 // size returns the height of the axis.
-func (a *horizontalAxis) size() (h vg.Length) {
+func (a *HorizontalAxis) Size() (h vg.Length) {
 	if a.Label.Text != "" {
 		h -= a.Label.Font.Extents().Descent
 		h += a.Label.Height(a.Label.Text)
@@ -192,8 +192,8 @@ func (a *horizontalAxis) size() (h vg.Length) {
 	return
 }
 
-// draw draws the axis along the lower edge of a draw.Canvas.
-func (a *horizontalAxis) draw(c draw.Canvas) {
+// Draw draws the axis along the lower edge of a draw.Canvas.
+func (a *HorizontalAxis) Draw(c draw.Canvas) {
 	y := c.Min.Y
 	if a.Label.Text != "" {
 		y -= a.Label.Font.Extents().Descent
@@ -233,7 +233,7 @@ func (a *horizontalAxis) draw(c draw.Canvas) {
 }
 
 // GlyphBoxes returns the GlyphBoxes for the tick labels.
-func (a *horizontalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
+func (a *HorizontalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 	for _, t := range a.Tick.Marker.Ticks(a.Min, a.Max) {
 		if t.IsMinor() {
 			continue
@@ -249,12 +249,12 @@ func (a *horizontalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 }
 
 // A verticalAxis is drawn vertically up the left side of a plot.
-type verticalAxis struct {
+type VerticalAxis struct {
 	Axis
 }
 
 // size returns the width of the axis.
-func (a *verticalAxis) size() (w vg.Length) {
+func (a *VerticalAxis) Size() (w vg.Length) {
 	if a.Label.Text != "" {
 		w -= a.Label.Font.Extents().Descent
 		w += a.Label.Height(a.Label.Text)
@@ -273,8 +273,8 @@ func (a *verticalAxis) size() (w vg.Length) {
 	return
 }
 
-// draw draws the axis along the left side of a draw.Canvas.
-func (a *verticalAxis) draw(c draw.Canvas) {
+// Draw draws the axis along the left side of a draw.Canvas.
+func (a *VerticalAxis) Draw(c draw.Canvas) {
 	x := c.Min.X
 	if a.Label.Text != "" {
 		x += a.Label.Height(a.Label.Text)
@@ -316,7 +316,7 @@ func (a *verticalAxis) draw(c draw.Canvas) {
 }
 
 // GlyphBoxes returns the GlyphBoxes for the tick labels
-func (a *verticalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
+func (a *VerticalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 	for _, t := range a.Tick.Marker.Ticks(a.Min, a.Max) {
 		if t.IsMinor() {
 			continue
