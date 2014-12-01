@@ -194,7 +194,7 @@ func (p *Plot) DrawGlyphBoxes(c *draw.Canvas) {
 // DefaultPlotStyle implements PlotDrawer
 type DefaultPlotStyle struct{}
 
-// Draw draws a plot to a vgdraw.Canvas.
+// DrawPlot draws a plot to a vgdraw.Canvas.
 //
 // Plotters are drawn in the order in which they were
 // added to the plot.  Plotters that  implement the

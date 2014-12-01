@@ -175,7 +175,7 @@ type HorizontalAxis struct {
 	Axis
 }
 
-// size returns the height of the axis.
+// Size returns the height of the axis.
 func (a *HorizontalAxis) Size() (h vg.Length) {
 	if a.Label.Text != "" {
 		h -= a.Label.Font.Extents().Descent
@@ -253,7 +253,7 @@ type VerticalAxis struct {
 	Axis
 }
 
-// size returns the width of the axis.
+// Size returns the width of the axis.
 func (a *VerticalAxis) Size() (w vg.Length) {
 	if a.Label.Text != "" {
 		w -= a.Label.Font.Extents().Descent
