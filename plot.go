@@ -70,6 +70,9 @@ type Plot struct {
 	// plotters are drawn by calling their Plot method
 	// after the axes are drawn.
 	plotters []Plotter
+
+	xaxes []XAxiser
+	yaxes []YAxiser
 }
 
 // Plotter is an interface that wraps the Plot method.
@@ -149,9 +152,62 @@ func (p *Plot) Add(ps ...Plotter) {
 			p.Y.Min = math.Min(p.Y.Min, ymin)
 			p.Y.Max = math.Max(p.Y.Max, ymax)
 		}
+		if v, ok := d.(XAxiser); ok {
+			p.xaxes = append(p.xaxes, v)
+		}
+		if v, ok := d.(YAxiser); ok {
+			p.yaxes = append(p.yaxes, v)
+		}
 	}
 
 	p.plotters = append(p.plotters, ps...)
+}
+
+func (p *Plot) xaxis() HorizontalAxis {
+	p.X.SanitizeRange()
+	return HorizontalAxis{p.X}
+}
+
+func (p *Plot) yaxis() VerticalAxis {
+	p.Y.SanitizeRange()
+	return VerticalAxis{p.Y}
+}
+
+func (p *Plot) updateAxes() (vg.Length, vg.Length) {
+	x, y := p.XYAxes()
+	return x.Size(), y.Size()
+}
+
+func (p *Plot) XYAxes() (HorizontalAxis, VerticalAxis) {
+
+	x := p.xaxis()
+	xsize := x.Size()
+	y := p.yaxis()
+	ysize := y.Size()
+
+	for _, v := range p.xaxes {
+		v.SanitizeRange()
+		xx := v.Axis()
+		xx.Min = p.X.Min
+		xx.Max = p.X.Max
+		if xsize < v.Size() {
+			x = HorizontalAxis{*xx}
+			xsize = x.Size()
+		}
+	}
+
+	for _, v := range p.yaxes {
+		v.SanitizeRange()
+		yy := v.Axis()
+		yy.Min = p.Y.Min
+		yy.Max = p.Y.Max
+		if ysize < v.Size() {
+			y = VerticalAxis{*yy}
+			ysize = y.Size()
+		}
+	}
+
+	return x, y
 }
 
 // Draw draws a plot to a draw.Canvas.
@@ -162,6 +218,8 @@ func (p *Plot) Add(ps ...Plotter) {
 // taken into account when padding the plot so that
 // none of their glyphs are clipped.
 func (p *Plot) Draw(c draw.Canvas) {
+
+	p.updateAxes()
 	p.Style.DrawPlot(p, c)
 }
 
@@ -173,10 +231,8 @@ func (p *Plot) DataCanvas(c draw.Canvas) draw.Canvas {
 		c.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
 		c.Max.Y -= p.Title.Padding
 	}
-	p.X.SanitizeRange()
-	x := HorizontalAxis{p.X}
-	p.Y.SanitizeRange()
-	y := VerticalAxis{p.Y}
+
+	x, y := p.XYAxes()
 	return PadY(p, PadX(p, c.Crop(y.Size(), x.Size(), 0, 0)))
 }
 
@@ -194,7 +250,7 @@ func (p *Plot) DrawGlyphBoxes(c *draw.Canvas) {
 // DefaultPlotStyle implements PlotDrawer
 type DefaultPlotStyle struct{}
 
-// DrawPlot draws a plot to a vgdraw.Canvas.
+// DrawPlot draws a plot to a draw.Canvas.
 //
 // Plotters are drawn in the order in which they were
 // added to the plot.  Plotters that  implement the
@@ -251,19 +307,29 @@ func (d DefaultPlotStyle) DrawPlot(p *Plot, c draw.Canvas) {
 		c.Size.Y -= p.Title.Padding
 	}
 
-	p.X.SanitizeRange()
-	x := HorizontalAxis{p.X}
-	p.Y.SanitizeRange()
-	y := VerticalAxis{p.Y}
+	x, y := p.XYAxes()
 
 	ywidth := y.Size()
-	x.Draw(PadX(p, c.Crop(ywidth, 0, 0, 0)))
 	xheight := x.Size()
-	y.Draw(PadY(p, c.Crop(0, xheight, 0, 0)))
 
-	datac := PadY(p, PadX(p, c.Crop(ywidth, xheight, 0, 0)))
+	xc := PadX(p, c.Crop(ywidth, 0, 0, 0))
+	yc := PadY(p, c.Crop(0, xheight, 0, 0))
+
+	xmin := xc.Min.X
+	ymin := yc.Min.Y
+
+	datac := PadY(p, PadX(p, c.Crop(xmin, ymin, 0, 0)))
 	for _, data := range p.plotters {
-		data.Plot(datac, p)
+		switch v := data.(type) {
+		case XAxiser:
+			data.Plot(xc, p)
+			xheight = v.Size()
+		case YAxiser:
+			data.Plot(yc, p)
+			ywidth = v.Size()
+		default:
+			data.Plot(datac, p)
+		}
 	}
 
 	p.Legend.Draw(c.Crop(ywidth, 0, 0, 0).Crop(0, xheight, 0, 0))
@@ -274,7 +340,7 @@ func (d DefaultPlotStyle) DrawPlot(p *Plot, c draw.Canvas) {
 func PadX(p *Plot, c draw.Canvas) draw.Canvas {
 	glyphs := p.GlyphBoxes(p)
 	l := leftMost(&c, glyphs)
-	xAxis := HorizontalAxis{p.X}
+	xAxis := p.xaxis()
 	glyphs = append(glyphs, xAxis.GlyphBoxes(p)...)
 	r := rightMost(&c, glyphs)
 
@@ -330,7 +396,7 @@ func leftMost(c *draw.Canvas, boxes []GlyphBox) GlyphBox {
 func PadY(p *Plot, c draw.Canvas) draw.Canvas {
 	glyphs := p.GlyphBoxes(p)
 	b := bottomMost(&c, glyphs)
-	yAxis := VerticalAxis{p.Y}
+	yAxis := p.yaxis()
 	glyphs = append(glyphs, yAxis.GlyphBoxes(p)...)
 	t := topMost(&c, glyphs)
 
@@ -437,6 +503,10 @@ type GlyphBox struct {
 // data that meet the GlyphBoxer interface.
 func (p *Plot) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 	for _, d := range p.plotters {
+		switch d.(type) {
+		case XAxiser, YAxiser:
+			continue
+		}
 		gb, ok := d.(GlyphBoxer)
 		if !ok {
 			continue

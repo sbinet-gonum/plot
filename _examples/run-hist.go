@@ -35,14 +35,19 @@ func main() {
 		panic(err)
 	}
 	p.Title.Text = "Histogram"
-	p.X.Label.Text = "X-axis"
-	p.Y.Label.Text = "Y-axis"
-
+	// p.X.Label.Text = "X-axis"
+	// p.Y.Label.Text = "Y-axis"
 	if *style == "gnuplot" {
 		p.Style = GnuplotStyle{}
 		p.X.Padding = 0
 		p.Y.Padding = 0
 	}
+
+	xaxis := plotter.NewXAxis("X-axis")
+	p.Add(xaxis)
+
+	yaxis := plotter.NewYAxis("Y-axis")
+	p.Add(yaxis)
 
 	// Draw a grid behind the data
 	p.Add(plotter.NewGrid())
@@ -64,6 +69,10 @@ func main() {
 	norm.Color = color.RGBA{R: 255, A: 255}
 	norm.Width = vg.Points(2)
 	p.Add(norm)
+
+	//p.HideAxes()
+	//p.HideX()
+	//p.HideY()
 
 	// Save the plot to a PNG file.
 	if err := p.Save(4, 4, "hist.png"); err != nil {
@@ -94,31 +103,34 @@ func (s GnuplotStyle) DrawPlot(p *plot.Plot, c draw.Canvas) {
 		c.Max.Y -= p.Title.Padding
 	}
 
-	p.X.SanitizeRange()
-	x := plot.HorizontalAxis{p.X}
-	p.Y.SanitizeRange()
-	y := plot.VerticalAxis{p.Y}
-
+	x, y := p.XYAxes()
 	ywidth := y.Size()
 	xheight := x.Size()
 
 	xda := plot.PadX(p, draw.Crop(c, ywidth-y.Width-y.Padding, 0, 0, 0))
 	yda := plot.PadY(p, draw.Crop(c, 0, xheight-x.Width-x.Padding, 0, 0))
 
-	x.Draw(xda)
-	y.Draw(yda)
 	xmin := xda.Min.X
 	xmax := xda.Max.X
 	ymin := yda.Min.Y
 	ymax := xda.Max.Y
 	xda.StrokeLine2(x.LineStyle, xmin, ymax, xmax, ymax)
-	xda.StrokeLine2(x.LineStyle, xmin, ymin, xmax, ymin)
-	yda.StrokeLine2(y.LineStyle, xmin, ymin, xmin, ymax)
+	// xda.StrokeLine2(x.LineStyle, xmin, ymin, xmax, ymin)
+	// yda.StrokeLine2(y.LineStyle, xmin, ymin, xmin, ymax)
 	yda.StrokeLine2(y.LineStyle, xmax, ymin, xmax, ymax)
 
-	datac := plot.PadY(p, plot.PadX(p, draw.Crop(c, ywidth, xheight, 0, 0)))
+	datac := plot.PadY(p, plot.PadX(p, draw.Crop(c, xmin, ymin, 0, 0)))
 	for _, data := range p.Plotters() {
-		data.Plot(datac, p)
+		switch v := data.(type) {
+		case plot.XAxiser:
+			data.Plot(xda, p)
+			xheight = v.Size()
+		case plot.YAxiser:
+			data.Plot(yda, p)
+			ywidth = v.Size()
+		default:
+			data.Plot(datac, p)
+		}
 	}
 
 	p.Legend.Draw(draw.Crop(draw.Crop(c, ywidth, 0, 0, 0), 0, 0, xheight, 0))

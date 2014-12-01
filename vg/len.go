@@ -29,3 +29,11 @@ func (l Length) Dots(c Canvas) float64 {
 func (l Length) Points() float64 {
 	return float64(l)
 }
+
+// Max returns the larger of x or y.
+func Max(x, y Length) Length {
+	if x > y {
+		return x
+	}
+	return y
+}

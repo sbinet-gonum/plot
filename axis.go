@@ -27,6 +27,22 @@ type Normalizer interface {
 	Normalize(min, max, x float64) float64
 }
 
+type Axiser interface {
+	Axis() *Axis
+	SanitizeRange()
+	Size() vg.Length
+}
+
+type XAxiser interface {
+	Axiser
+	IsXAxis() bool
+}
+
+type YAxiser interface {
+	Axiser
+	IsYAxis() bool
+}
+
 // An Axis represents either a horizontal or vertical
 // axis of a plot.
 type Axis struct {
