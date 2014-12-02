@@ -60,6 +60,9 @@ func main() {
 	h.Normalize(1)
 	p.Add(h)
 
+	p.Legend.Top = true
+	p.Legend.Add("histo", h)
+
 	// The normal distribution function
 	norm := plotter.NewFunction(stdNorm)
 	norm.Color = color.RGBA{R: 255, A: 255}

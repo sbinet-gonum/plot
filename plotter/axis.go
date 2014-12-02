@@ -10,7 +10,7 @@ import (
 
 	"github.com/gonum/plot"
 	"github.com/gonum/plot/vg"
-	"github.com/gonum/plot/vg/vgdraw"
+	"github.com/gonum/plot/vg/draw"
 )
 
 const (
@@ -36,7 +36,7 @@ func (*XAxis) IsXAxis() bool {
 }
 
 // Plot implements the plot.Plotter interface.
-func (x *XAxis) Plot(c vgdraw.Canvas, plt *plot.Plot) {
+func (x *XAxis) Plot(c draw.Canvas, plt *plot.Plot) {
 	x.SanitizeRange()
 	x.Draw(c)
 }
@@ -65,22 +65,22 @@ func newAxis() plot.Axis {
 	a := plot.Axis{
 		Min: math.Inf(1),
 		Max: math.Inf(-1),
-		LineStyle: vgdraw.LineStyle{
+		LineStyle: draw.LineStyle{
 			Color: color.Black,
 			Width: vg.Points(0.5),
 		},
 		Padding: vg.Points(5),
 		Scale:   plot.LinearScale{},
 	}
-	a.Label.TextStyle = vgdraw.TextStyle{
+	a.Label.TextStyle = draw.TextStyle{
 		Color: color.Black,
 		Font:  labelFont,
 	}
-	a.Tick.Label = vgdraw.TextStyle{
+	a.Tick.Label = draw.TextStyle{
 		Color: color.Black,
 		Font:  tickFont,
 	}
-	a.Tick.LineStyle = vgdraw.LineStyle{
+	a.Tick.LineStyle = draw.LineStyle{
 		Color: color.Black,
 		Width: vg.Points(0.5),
 	}
@@ -99,7 +99,7 @@ func (*YAxis) IsYAxis() bool {
 }
 
 // Plot implements the plot.Plotter interface.
-func (y *YAxis) Plot(c vgdraw.Canvas, plt *plot.Plot) {
+func (y *YAxis) Plot(c draw.Canvas, plt *plot.Plot) {
 	y.SanitizeRange()
 	y.Draw(c)
 }
