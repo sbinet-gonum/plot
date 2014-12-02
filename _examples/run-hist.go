@@ -34,20 +34,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	p.Title.Text = "Histogram"
-	// p.X.Label.Text = "X-axis"
-	// p.Y.Label.Text = "Y-axis"
 	if *style == "gnuplot" {
 		p.Style = GnuplotStyle{}
 		p.X.Padding = 0
 		p.Y.Padding = 0
 	}
 
-	xaxis := plotter.NewXAxis("X-axis")
-	p.Add(xaxis)
-
-	yaxis := plotter.NewYAxis("Y-axis")
-	p.Add(yaxis)
+	p.Add(plotter.NewXAxis("X-axis"))
+	p.Add(plotter.NewYAxis("Y-axis"))
 
 	// Draw a grid behind the data
 	p.Add(plotter.NewGrid())
@@ -69,10 +65,6 @@ func main() {
 	norm.Color = color.RGBA{R: 255, A: 255}
 	norm.Width = vg.Points(2)
 	p.Add(norm)
-
-	//p.HideAxes()
-	//p.HideX()
-	//p.HideY()
 
 	// Save the plot to a PNG file.
 	if err := p.Save(4, 4, "hist.png"); err != nil {
