@@ -5,8 +5,8 @@
 package plot
 
 import (
-	"github.com/gonum/plot/vg/draw"
+	_ "github.com/gonum/plot/vg/draw"
 )
 
 // Draw exports the Legend draw method for testing.
-func (l *Legend) Draw(c draw.Canvas) { l.draw(c) }
+//func (l *Legend) Draw(c draw.Canvas) { l.draw(c) }
