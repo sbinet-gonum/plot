@@ -286,55 +286,6 @@ func (d DefaultPlotStyle) DrawPlot(p *Plot, c draw.Canvas) {
 	p.Legend.Draw(c.Crop(ywidth, 0, 0, 0).Crop(0, xheight, 0, 0))
 }
 
-// DefaultPlotStyle implements PlotDrawer
-type DefaultPlotStyle struct{}
-
-// Draw draws a plot to a vgdraw.Canvas.
-//
-// Plotters are drawn in the order in which they were
-// added to the plot.  Plotters that  implement the
-// GlyphBoxer interface will have their GlyphBoxes
-// taken into account when padding the plot so that
-// none of their glyphs are clipped.
-func (d DefaultPlotStyle) DrawPlot(p *Plot, c draw.Canvas) {
-	if p.BackgroundColor != nil {
-		c.SetColor(p.BackgroundColor)
-		c.Fill(c.Rect.Path())
-	}
-	if p.Title.Text != "" {
-		c.FillText(p.Title.TextStyle, c.Center().X, c.Max().Y, -0.5, -1, p.Title.Text)
-		c.Size.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
-		c.Size.Y -= p.Title.Padding
-	}
-
-	x, y := p.XYAxes()
-
-	ywidth := y.Size()
-	xheight := x.Size()
-
-	xc := PadX(p, c.Crop(ywidth, 0, 0, 0))
-	yc := PadY(p, c.Crop(0, xheight, 0, 0))
-
-	xmin := xc.Min.X
-	ymin := yc.Min.Y
-
-	datac := PadY(p, PadX(p, c.Crop(xmin, ymin, 0, 0)))
-	for _, data := range p.plotters {
-		switch v := data.(type) {
-		case XAxiser:
-			data.Plot(xc, p)
-			xheight = v.Size()
-		case YAxiser:
-			data.Plot(yc, p)
-			ywidth = v.Size()
-		default:
-			data.Plot(datac, p)
-		}
-	}
-
-	p.Legend.Draw(c.Crop(ywidth, 0, 0, 0).Crop(0, xheight, 0, 0))
-}
-
 // PadX returns a draw.Canvas that is padded horizontally
 // so that glyphs will no be clipped.
 func PadX(p *Plot, c draw.Canvas) draw.Canvas {
