@@ -9,6 +9,8 @@ package vgeps
 import (
 	"bufio"
 	"bytes"
+	"compress/flate"
+	"encoding/ascii85"
 	"fmt"
 	"image"
 	"image/color"
@@ -190,8 +192,96 @@ func (e *Canvas) FillString(fnt vg.Font, pt vg.Point, str string) {
 
 // DrawImage implements the vg.Canvas.DrawImage method.
 func (c *Canvas) DrawImage(rect vg.Rectangle, img image.Image) {
-	// FIXME: https://github.com/gonum/plot/issues/271
-	panic("vgeps: DrawImage not implemented")
+	var (
+		width   = rect.Size().X.Dots(DPI)
+		height  = rect.Size().Y.Dots(DPI)
+		iwidth  = img.Bounds().Dx()
+		iheight = img.Bounds().Dy()
+	)
+	c.Push()
+	fmt.Fprintf(c.buf, "\n%%%% Image data\n")
+	c.Translate(rect.Min)
+	fmt.Fprintf(c.buf, "%.*g %.*g scale     %% scale pixels to points\n", pr, width, pr, height)
+	fmt.Fprintf(c.buf, "%d %d 8 [%d 0 0 %d 0 0]     ", iwidth, iheight, iwidth, iheight)
+	fmt.Fprintf(c.buf, "%%%% width height colordepth transform\n")
+	fmt.Fprintf(c.buf, "/datasource currentfile /ASCII85Decode filter /FlateDecode filter def\n")
+	fmt.Fprintf(c.buf, "/datastring %d string def   ", iwidth*3)
+	fmt.Fprintf(c.buf, "%% %d = width * color components\n", iwidth*3)
+	fmt.Fprintf(c.buf, "{datasource datastring readstring pop}\n")
+	fmt.Fprintf(c.buf, "false       %%%% false == single data source (rgb)\n")
+	fmt.Fprintf(c.buf, "3   %%%% number of color components\n")
+	fmt.Fprintf(c.buf, "colorimage\n")
+	err := encodeEPSData(c.buf, img)
+	c.Pop()
+	if err != nil {
+		panic(fmt.Errorf("vgeps: error encoding EPS data: %v", err))
+	}
+}
+
+func encodeEPSData(w io.Writer, img image.Image) error {
+	var (
+		err  error
+		buf  = new(bytes.Buffer)
+		pix  [3]byte
+		imax = img.Bounds().Dx()
+		jmax = img.Bounds().Dy()
+	)
+	fw, err := flate.NewWriter(buf, flate.DefaultCompression)
+	if err != nil {
+		return err
+	}
+	defer fw.Close()
+	for j := 0; j < jmax; j++ {
+		for i := 0; i < imax; i++ {
+			r, g, b, a := img.At(i, j).RGBA()
+			switch a {
+			case 0:
+				pix = [3]byte{}
+			default:
+				pix[0] = uint8((r * 65535 / a) >> 8)
+				pix[1] = uint8((g * 65535 / a) >> 8)
+				pix[2] = uint8((b * 65535 / a) >> 8)
+			}
+			_, err = fw.Write(pix[:])
+			if err != nil {
+				return err
+			}
+		}
+	}
+	err = fw.Close()
+	if err != nil {
+		return err
+	}
+
+	enc := ascii85.NewEncoder(w)
+	_, err = io.Copy(enc, buf)
+	if err != nil {
+		return err
+	}
+
+	err = enc.Close()
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write([]byte("~>\n"))
+	return err
+}
+
+func rlEncode(s string) string {
+	count := 1
+	var o bytes.Buffer
+	var i int
+	for i = 0; i < len(s)-1; i++ {
+		if s[i] == s[i+1] {
+			count++
+		} else {
+			o.WriteString(fmt.Sprintf("%d%c", count, s[i]))
+			count = 1
+		}
+	}
+	o.WriteString(fmt.Sprintf("%d%c", count, s[i]))
+	return o.String()
 }
 
 // WriteTo writes the canvas to an io.Writer.
