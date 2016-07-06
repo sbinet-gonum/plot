@@ -5,6 +5,7 @@
 package plot
 
 import (
+	"github.com/gonum/plot/style"
 	"github.com/gonum/plot/vg"
 	"github.com/gonum/plot/vg/draw"
 )
@@ -14,16 +15,6 @@ import (
 // and a thumbnail, where the thumbnail shows a small
 // sample of the display style of the corresponding data.
 type Legend struct {
-	// TextStyle is the style given to the legend
-	// entry texts.
-	draw.TextStyle
-
-	// Padding is the amount of padding to add
-	// betweeneach entry of the legend.  If Padding
-	// is zero then entries are spaced based on the
-	// font size.
-	Padding vg.Length
-
 	// Top and Left specify the location of the legend.
 	// If Top is true the legend is located along the top
 	// edge of the plot, otherwise it is located along
@@ -40,6 +31,8 @@ type Legend struct {
 
 	// ThumbnailWidth is the width of legend thumbnails.
 	ThumbnailWidth vg.Length
+
+	Style style.Legend
 
 	// entries are all of the legendEntries described
 	// by this legend.
@@ -69,25 +62,21 @@ type Thumbnailer interface {
 
 // makeLegend returns a legend with the default
 // parameter settings.
-func makeLegend() (Legend, error) {
-	font, err := vg.MakeFont(DefaultFont, vg.Points(12))
-	if err != nil {
-		return Legend{}, err
-	}
+func makeLegend(sty style.Legend) (Legend, error) {
 	return Legend{
 		ThumbnailWidth: vg.Points(20),
-		TextStyle:      draw.TextStyle{Font: font},
+		Style:          sty,
 	}, nil
 }
 
 // draw draws the legend to the given draw.Canvas.
 func (l *Legend) draw(c draw.Canvas) {
 	iconx := c.Min.X
-	textx := iconx + l.ThumbnailWidth + l.TextStyle.Width(" ")
+	textx := iconx + l.ThumbnailWidth + l.Style.Text.Width(" ")
 	xalign := 0.0
 	if !l.Left {
 		iconx = c.Max.X - l.ThumbnailWidth
-		textx = iconx - l.TextStyle.Width(" ")
+		textx = iconx - l.Style.Text.Width(" ")
 		xalign = -1
 	}
 	textx += l.XOffs
@@ -96,7 +85,7 @@ func (l *Legend) draw(c draw.Canvas) {
 	enth := l.entryHeight()
 	y := c.Max.Y - enth
 	if !l.Top {
-		y = c.Min.Y + (enth+l.Padding)*(vg.Length(len(l.entries))-1)
+		y = c.Min.Y + (enth+l.Style.Padding)*(vg.Length(len(l.entries))-1)
 	}
 	y += l.YOffs
 
@@ -111,10 +100,10 @@ func (l *Legend) draw(c draw.Canvas) {
 		for _, t := range e.thumbs {
 			t.Thumbnail(icon)
 		}
-		yoffs := (enth - l.TextStyle.Height(e.text)) / 2
-		c.FillText(l.TextStyle, vg.Point{textx, icon.Min.Y + yoffs}, xalign, 0, e.text)
-		icon.Min.Y -= enth + l.Padding
-		icon.Max.Y -= enth + l.Padding
+		yoffs := (enth - l.Style.Text.Height(e.text)) / 2
+		c.FillText(l.Style.Text, vg.Point{textx, icon.Min.Y + yoffs}, xalign, 0, e.text)
+		icon.Min.Y -= enth + l.Style.Padding
+		icon.Max.Y -= enth + l.Style.Padding
 	}
 }
 
@@ -122,7 +111,7 @@ func (l *Legend) draw(c draw.Canvas) {
 // entry text.
 func (l *Legend) entryHeight() (height vg.Length) {
 	for _, e := range l.entries {
-		if h := l.TextStyle.Height(e.text); h > height {
+		if h := l.Style.Text.Height(e.text); h > height {
 			height = h
 		}
 	}

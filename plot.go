@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gonum/plot/style"
 	"github.com/gonum/plot/vg"
 	"github.com/gonum/plot/vg/draw"
 )
@@ -39,18 +40,7 @@ type Plot struct {
 		// Text is the empty string then the plot
 		// will not have a title.
 		Text string
-
-		// Padding is the amount of padding
-		// between the bottom of the title and
-		// the top of the plot.
-		Padding vg.Length
-
-		draw.TextStyle
 	}
-
-	// BackgroundColor is the background color of the plot.
-	// The default is White.
-	BackgroundColor color.Color
 
 	// X and Y are the horizontal and vertical axes
 	// of the plot respectively.
@@ -58,6 +48,9 @@ type Plot struct {
 
 	// Legend is the plot's legend.
 	Legend Legend
+
+	// Style is the plot's style.
+	Style Style
 
 	// plotters are drawn by calling their Plot method
 	// after the axes are drawn.
@@ -80,34 +73,33 @@ type DataRanger interface {
 	DataRange() (xmin, xmax, ymin, ymax float64)
 }
 
+// Style
+type Style interface {
+	DrawPlot(c draw.Canvas, p *Plot)
+	Plot() style.Plot
+}
+
 // New returns a new plot with some reasonable
 // default settings.
 func New() (*Plot, error) {
-	titleFont, err := vg.MakeFont(DefaultFont, 12)
+	style := DefaultStyle()
+	x, err := makeAxis(style.Plot().X)
 	if err != nil {
 		return nil, err
 	}
-	x, err := makeAxis()
+	y, err := makeAxis(style.Plot().Y)
 	if err != nil {
 		return nil, err
 	}
-	y, err := makeAxis()
-	if err != nil {
-		return nil, err
-	}
-	legend, err := makeLegend()
+	legend, err := makeLegend(style.Plot().Legend)
 	if err != nil {
 		return nil, err
 	}
 	p := &Plot{
-		BackgroundColor: color.White,
-		X:               x,
-		Y:               y,
-		Legend:          legend,
-	}
-	p.Title.TextStyle = draw.TextStyle{
-		Color: color.Black,
-		Font:  titleFont,
+		X:      x,
+		Y:      y,
+		Legend: legend,
+		Style:  style,
 	}
 	return p, nil
 }
@@ -143,14 +135,15 @@ func (p *Plot) Add(ps ...Plotter) {
 // taken into account when padding the plot so that
 // none of their glyphs are clipped.
 func (p *Plot) Draw(c draw.Canvas) {
-	if p.BackgroundColor != nil {
-		c.SetColor(p.BackgroundColor)
+	sty := p.Style.Plot()
+	if sty.BackgroundColor != nil {
+		c.SetColor(sty.BackgroundColor)
 		c.Fill(c.Rectangle.Path())
 	}
 	if p.Title.Text != "" {
-		c.FillText(p.Title.TextStyle, vg.Point{c.Center().X, c.Max.Y}, -0.5, -1, p.Title.Text)
-		c.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
-		c.Max.Y -= p.Title.Padding
+		c.FillText(sty.Title.Text, vg.Point{c.Center().X, c.Max.Y}, -0.5, -1, p.Title.Text)
+		c.Max.Y -= sty.Title.Text.Height(p.Title.Text) - sty.Title.Text.Font.Extents().Descent
+		c.Max.Y -= sty.Title.Padding
 	}
 
 	p.X.sanitizeRange()
@@ -175,9 +168,10 @@ func (p *Plot) Draw(c draw.Canvas) {
 // is the subset of the given draw area into which
 // the plot data will be drawn.
 func (p *Plot) DataCanvas(da draw.Canvas) draw.Canvas {
+	sty := p.Style.Plot()
 	if p.Title.Text != "" {
-		da.Max.Y -= p.Title.Height(p.Title.Text) - p.Title.Font.Extents().Descent
-		da.Max.Y -= p.Title.Padding
+		da.Max.Y -= sty.Title.Text.Height(p.Title.Text) - sty.Title.Text.Font.Extents().Descent
+		da.Max.Y -= sty.Title.Padding
 	}
 	p.X.sanitizeRange()
 	x := horizontalAxis{p.X}
@@ -390,10 +384,10 @@ func (p *Plot) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 // that do not end up in range of the X axis will not have
 // tick marks.
 func (p *Plot) NominalX(names ...string) {
-	p.X.Tick.Width = 0
-	p.X.Tick.Length = 0
-	p.X.Width = 0
-	p.Y.Padding = p.X.Tick.Label.Width(names[0]) / 2
+	p.X.Style.Tick.Line.Width = 0
+	p.X.Style.Tick.Length = 0
+	p.X.Style.Line.Width = 0
+	p.Y.Style.Padding = p.X.Style.Tick.Label.Width(names[0]) / 2
 	ticks := make([]Tick, len(names))
 	for i, name := range names {
 		ticks[i] = Tick{float64(i), name}
@@ -403,15 +397,15 @@ func (p *Plot) NominalX(names ...string) {
 
 // HideX configures the X axis so that it will not be drawn.
 func (p *Plot) HideX() {
-	p.X.Tick.Length = 0
-	p.X.Width = 0
+	p.X.Style.Tick.Length = 0
+	p.X.Style.Line.Width = 0
 	p.X.Tick.Marker = ConstantTicks([]Tick{})
 }
 
 // HideY configures the Y axis so that it will not be drawn.
 func (p *Plot) HideY() {
-	p.Y.Tick.Length = 0
-	p.Y.Width = 0
+	p.Y.Style.Tick.Length = 0
+	p.Y.Style.Line.Width = 0
 	p.Y.Tick.Marker = ConstantTicks([]Tick{})
 }
 
@@ -423,10 +417,10 @@ func (p *Plot) HideAxes() {
 
 // NominalY is like NominalX, but for the Y axis.
 func (p *Plot) NominalY(names ...string) {
-	p.Y.Tick.Width = 0
-	p.Y.Tick.Length = 0
-	p.Y.Width = 0
-	p.X.Padding = p.Y.Tick.Label.Height(names[0]) / 2
+	p.Y.Style.Tick.Line.Width = 0
+	p.Y.Style.Tick.Length = 0
+	p.Y.Style.Line.Width = 0
+	p.X.Style.Padding = p.Y.Style.Tick.Label.Height(names[0]) / 2
 	ticks := make([]Tick, len(names))
 	for i, name := range names {
 		ticks[i] = Tick{float64(i), name}

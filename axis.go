@@ -5,12 +5,12 @@
 package plot
 
 import (
-	"image/color"
 	"math"
 	"strconv"
 	"time"
 
 	"github.com/gonum/floats"
+	"github.com/gonum/plot/style"
 	"github.com/gonum/plot/vg"
 	"github.com/gonum/plot/vg/draw"
 )
@@ -42,36 +42,16 @@ type Axis struct {
 	Label struct {
 		// Text is the axis label string.
 		Text string
-
-		// TextStyle is the style of the axis label text.
-		draw.TextStyle
 	}
 
-	// LineStyle is the style of the axis line.
-	draw.LineStyle
-
-	// Padding between the axis line and the data.  Having
-	// non-zero padding ensures that the data is never drawn
-	// on the axis, thus making it easier to see.
-	Padding vg.Length
-
 	Tick struct {
-		// Label is the TextStyle on the tick labels.
-		Label draw.TextStyle
-
-		// LineStyle is the LineStyle of the tick lines.
-		draw.LineStyle
-
-		// Length is the length of a major tick mark.
-		// Minor tick marks are half of the length of major
-		// tick marks.
-		Length vg.Length
-
 		// Marker returns the tick marks.  Any tick marks
 		// returned by the Marker function that are not in
 		// range of the axis are not drawn.
 		Marker Ticker
 	}
+
+	Style style.Axis
 
 	// Scale transforms a value given in the data coordinate system
 	// to the normalized coordinate system of the axis—its distance
@@ -83,42 +63,14 @@ type Axis struct {
 //
 // The default range is (∞, ­∞), and thus any finite
 // value is less than Min and greater than Max.
-func makeAxis() (Axis, error) {
-	labelFont, err := vg.MakeFont(DefaultFont, vg.Points(12))
-	if err != nil {
-		return Axis{}, err
-	}
-
-	tickFont, err := vg.MakeFont(DefaultFont, vg.Points(10))
-	if err != nil {
-		return Axis{}, err
-	}
-
+func makeAxis(sty style.Axis) (Axis, error) {
 	a := Axis{
-		Min: math.Inf(1),
-		Max: math.Inf(-1),
-		LineStyle: draw.LineStyle{
-			Color: color.Black,
-			Width: vg.Points(0.5),
-		},
-		Padding: vg.Points(5),
-		Scale:   LinearScale{},
+		Min:   math.Inf(1),
+		Max:   math.Inf(-1),
+		Scale: LinearScale{},
+		Style: sty,
 	}
-	a.Label.TextStyle = draw.TextStyle{
-		Color: color.Black,
-		Font:  labelFont,
-	}
-	a.Tick.Label = draw.TextStyle{
-		Color: color.Black,
-		Font:  tickFont,
-	}
-	a.Tick.LineStyle = draw.LineStyle{
-		Color: color.Black,
-		Width: vg.Points(0.5),
-	}
-	a.Tick.Length = vg.Points(8)
 	a.Tick.Marker = DefaultTicks{}
-
 	return a, nil
 }
 
@@ -174,7 +126,7 @@ func (a *Axis) Norm(x float64) float64 {
 
 // drawTicks returns true if the tick marks should be drawn.
 func (a *Axis) drawTicks() bool {
-	return a.Tick.Width > 0 && a.Tick.Length > 0
+	return a.Style.Tick.Line.Width > 0 && a.Style.Tick.Length > 0
 }
 
 // A horizontalAxis draws horizontally across the bottom
@@ -186,17 +138,17 @@ type horizontalAxis struct {
 // size returns the height of the axis.
 func (a *horizontalAxis) size() (h vg.Length) {
 	if a.Label.Text != "" {
-		h -= a.Label.Font.Extents().Descent
-		h += a.Label.Height(a.Label.Text)
+		h -= a.Style.Label.Font.Extents().Descent
+		h += a.Style.Label.Height(a.Label.Text)
 	}
 	if marks := a.Tick.Marker.Ticks(a.Min, a.Max); len(marks) > 0 {
 		if a.drawTicks() {
-			h += a.Tick.Length
+			h += a.Style.Tick.Length
 		}
-		h += tickLabelHeight(a.Tick.Label, marks)
+		h += tickLabelHeight(a.Style.Tick.Label, marks)
 	}
-	h += a.Width / 2
-	h += a.Padding
+	h += a.Style.Line.Width / 2
+	h += a.Style.Padding
 	return
 }
 
@@ -204,9 +156,9 @@ func (a *horizontalAxis) size() (h vg.Length) {
 func (a *horizontalAxis) draw(c draw.Canvas) {
 	y := c.Min.Y
 	if a.Label.Text != "" {
-		y -= a.Label.Font.Extents().Descent
-		c.FillText(a.Label.TextStyle, vg.Point{c.Center().X, y}, -0.5, 0, a.Label.Text)
-		y += a.Label.Height(a.Label.Text)
+		y -= a.Style.Label.Font.Extents().Descent
+		c.FillText(a.Style.Label, vg.Point{c.Center().X, y}, -0.5, 0, a.Label.Text)
+		y += a.Style.Label.Height(a.Label.Text)
 	}
 
 	marks := a.Tick.Marker.Ticks(a.Min, a.Max)
@@ -215,29 +167,29 @@ func (a *horizontalAxis) draw(c draw.Canvas) {
 		if !c.ContainsX(x) || t.IsMinor() {
 			continue
 		}
-		c.FillText(a.Tick.Label, vg.Point{x, y}, -0.5, 0, t.Label)
+		c.FillText(a.Style.Tick.Label, vg.Point{x, y}, -0.5, 0, t.Label)
 	}
 
 	if len(marks) > 0 {
-		y += tickLabelHeight(a.Tick.Label, marks)
+		y += tickLabelHeight(a.Style.Tick.Label, marks)
 	} else {
-		y += a.Width / 2
+		y += a.Style.Line.Width / 2
 	}
 
 	if len(marks) > 0 && a.drawTicks() {
-		len := a.Tick.Length
+		len := a.Style.Tick.Length
 		for _, t := range marks {
 			x := c.X(a.Norm(t.Value))
 			if !c.ContainsX(x) {
 				continue
 			}
 			start := t.lengthOffset(len)
-			c.StrokeLine2(a.Tick.LineStyle, x, y+start, x, y+len)
+			c.StrokeLine2(a.Style.Tick.Line, x, y+start, x, y+len)
 		}
 		y += len
 	}
 
-	c.StrokeLine2(a.LineStyle, c.Min.X, y, c.Max.X, y)
+	c.StrokeLine2(a.Style.Line, c.Min.X, y, c.Max.X, y)
 }
 
 // GlyphBoxes returns the GlyphBoxes for the tick labels.
@@ -246,7 +198,7 @@ func (a *horizontalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 		if t.IsMinor() {
 			continue
 		}
-		w := a.Tick.Label.Width(t.Label)
+		w := a.Style.Tick.Label.Width(t.Label)
 		box := GlyphBox{
 			X: a.Norm(t.Value),
 			Rectangle: vg.Rectangle{
@@ -267,20 +219,20 @@ type verticalAxis struct {
 // size returns the width of the axis.
 func (a *verticalAxis) size() (w vg.Length) {
 	if a.Label.Text != "" {
-		w -= a.Label.Font.Extents().Descent
-		w += a.Label.Height(a.Label.Text)
+		w -= a.Style.Label.Font.Extents().Descent
+		w += a.Style.Label.Height(a.Label.Text)
 	}
 	if marks := a.Tick.Marker.Ticks(a.Min, a.Max); len(marks) > 0 {
-		if lwidth := tickLabelWidth(a.Tick.Label, marks); lwidth > 0 {
+		if lwidth := tickLabelWidth(a.Style.Tick.Label, marks); lwidth > 0 {
 			w += lwidth
-			w += a.Label.Width(" ")
+			w += a.Style.Label.Width(" ")
 		}
 		if a.drawTicks() {
-			w += a.Tick.Length
+			w += a.Style.Tick.Length
 		}
 	}
-	w += a.Width / 2
-	w += a.Padding
+	w += a.Style.Line.Width / 2
+	w += a.Style.Padding
 	return
 }
 
@@ -288,15 +240,15 @@ func (a *verticalAxis) size() (w vg.Length) {
 func (a *verticalAxis) draw(c draw.Canvas) {
 	x := c.Min.X
 	if a.Label.Text != "" {
-		x += a.Label.Height(a.Label.Text)
+		x += a.Style.Label.Height(a.Label.Text)
 		c.Push()
 		c.Rotate(math.Pi / 2)
-		c.FillText(a.Label.TextStyle, vg.Point{c.Center().Y, -x}, -0.5, 0, a.Label.Text)
+		c.FillText(a.Style.Label, vg.Point{c.Center().Y, -x}, -0.5, 0, a.Label.Text)
 		c.Pop()
-		x += -a.Label.Font.Extents().Descent
+		x += -a.Style.Label.Font.Extents().Descent
 	}
 	marks := a.Tick.Marker.Ticks(a.Min, a.Max)
-	if w := tickLabelWidth(a.Tick.Label, marks); len(marks) > 0 && w > 0 {
+	if w := tickLabelWidth(a.Style.Tick.Label, marks); len(marks) > 0 && w > 0 {
 		x += w
 	}
 	major := false
@@ -305,25 +257,25 @@ func (a *verticalAxis) draw(c draw.Canvas) {
 		if !c.ContainsY(y) || t.IsMinor() {
 			continue
 		}
-		c.FillText(a.Tick.Label, vg.Point{x, y}, -1, -0.5, t.Label)
+		c.FillText(a.Style.Tick.Label, vg.Point{x, y}, -1, -0.5, t.Label)
 		major = true
 	}
 	if major {
-		x += a.Tick.Label.Width(" ")
+		x += a.Style.Tick.Label.Width(" ")
 	}
 	if a.drawTicks() && len(marks) > 0 {
-		len := a.Tick.Length
+		len := a.Style.Tick.Length
 		for _, t := range marks {
 			y := c.Y(a.Norm(t.Value))
 			if !c.ContainsY(y) {
 				continue
 			}
 			start := t.lengthOffset(len)
-			c.StrokeLine2(a.Tick.LineStyle, x+start, y, x+len, y)
+			c.StrokeLine2(a.Style.Tick.Line, x+start, y, x+len, y)
 		}
 		x += len
 	}
-	c.StrokeLine2(a.LineStyle, x, c.Min.Y, x, c.Max.Y)
+	c.StrokeLine2(a.Style.Line, x, c.Min.Y, x, c.Max.Y)
 }
 
 // GlyphBoxes returns the GlyphBoxes for the tick labels
@@ -332,7 +284,7 @@ func (a *verticalAxis) GlyphBoxes(*Plot) (boxes []GlyphBox) {
 		if t.IsMinor() {
 			continue
 		}
-		h := a.Tick.Label.Height(t.Label)
+		h := a.Style.Tick.Label.Height(t.Label)
 		box := GlyphBox{
 			Y: a.Norm(t.Value),
 			Rectangle: vg.Rectangle{
