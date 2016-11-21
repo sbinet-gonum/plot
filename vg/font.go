@@ -13,6 +13,7 @@ package vg
 import (
 	"errors"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"sync"
 
@@ -20,7 +21,16 @@ import (
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
-	"github.com/gonum/plot/vg/fonts"
+	"golang.org/x/image/font/gofont/gobold"
+	"golang.org/x/image/font/gofont/gobolditalic"
+	"golang.org/x/image/font/gofont/goitalic"
+	"golang.org/x/image/font/gofont/gomedium"
+	"golang.org/x/image/font/gofont/gomediumitalic"
+	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/gofont/gomonobold"
+	"golang.org/x/image/font/gofont/gomonobolditalic"
+	"golang.org/x/image/font/gofont/gomonoitalic"
+	"golang.org/x/image/font/gofont/goregular"
 )
 
 const (
@@ -36,23 +46,20 @@ var (
 	// Fonts that are not keys of this map are not supported.
 	FontMap = map[string]string{
 
-		// We use fonts from RedHat's Liberation project:
-		//  https://fedorahosted.org/liberation-fonts/
+		"Courier":             "GoMono-Regular",
+		"Courier-Bold":        "GoMono-Bold",
+		"Courier-Oblique":     "GoMono-Italic",
+		"Courier-BoldOblique": "GoMono-BoldItalic",
 
-		"Courier":             "LiberationMono-Regular",
-		"Courier-Bold":        "LiberationMono-Bold",
-		"Courier-Oblique":     "LiberationMono-Italic",
-		"Courier-BoldOblique": "LiberationMono-BoldItalic",
+		"Helvetica":             "GoSans-Regular",
+		"Helvetica-Bold":        "GoSans-Bold",
+		"Helvetica-Oblique":     "GoSans-Italic",
+		"Helvetica-BoldOblique": "GoSans-BoldItalic",
 
-		"Helvetica":             "LiberationSans-Regular",
-		"Helvetica-Bold":        "LiberationSans-Bold",
-		"Helvetica-Oblique":     "LiberationSans-Italic",
-		"Helvetica-BoldOblique": "LiberationSans-BoldItalic",
-
-		"Times-Roman":      "LiberationSerif-Regular",
-		"Times-Bold":       "LiberationSerif-Bold",
-		"Times-Italic":     "LiberationSerif-Italic",
-		"Times-BoldItalic": "LiberationSerif-BoldItalic",
+		"Times-Roman":      "GoSerif-Regular",
+		"Times-Bold":       "GoSerif-Bold",
+		"Times-Italic":     "GoSerif-Italic",
+		"Times-BoldItalic": "GoSerif-BoldItalic",
 	}
 
 	// loadedFonts is indexed by a font name and it
@@ -98,7 +105,7 @@ type Font struct {
 // the FontDirs slice for a directory containing the relevant font
 // file.  The font file name is name mapped by FontMap with the
 // .ttf extension.  For example, the font file for the font name
-// Courier is LiberationMono-Regular.ttf.
+// Courier is GoMono-Regular.ttf.
 func MakeFont(name string, size Length) (font Font, err error) {
 	font.Size = size
 	font.name = name
@@ -224,11 +231,6 @@ func fontData(name string) ([]byte, error) {
 		return data, nil
 	}
 
-	data, err := fonts.Asset(fname)
-	if err == nil {
-		return data, nil
-	}
-
 	return nil, errors.New("vg: failed to locate a font file " + fname + " for font name " + name)
 }
 
@@ -244,6 +246,7 @@ func fontData(name string) ([]byte, error) {
 // from different locations.
 var FontDirs []string
 
+//
 // FontFile returns the font file name for a font name or an error
 // if it is an unknown font (i.e., not in the FontMap).
 func fontFile(name string) (string, error) {
@@ -257,4 +260,33 @@ func fontFile(name string) (string, error) {
 		err = errors.New(errStr)
 	}
 	return n + ".ttf", err
+}
+
+func init() {
+	addFont := func(name string, ttf []byte) {
+		font, err := truetype.Parse(ttf)
+		if err != nil {
+			log.Printf("failed to parse font %q: %v\n", name, err)
+			return
+		}
+		fontLock.Lock()
+		loadedFonts[name] = font
+		loadedFonts[FontMap[name]] = font
+		fontLock.Unlock()
+	}
+
+	addFont("Courier", gomono.TTF)
+	addFont("Courier-Bold", gomonobold.TTF)
+	addFont("Courier-Italic", gomonoitalic.TTF)
+	addFont("Courier-BoldItalic", gomonobolditalic.TTF)
+
+	addFont("Helvetica-Regular", goregular.TTF)
+	addFont("Helvetica-Bold", gobold.TTF)
+	addFont("Helvetica-Italic", goitalic.TTF)
+	addFont("Helvetica-BoldItalic", gobolditalic.TTF)
+
+	addFont("Times-Roman", gomedium.TTF)
+	addFont("Times-Bold", gomedium.TTF)
+	addFont("Times-Italic", gomediumitalic.TTF)
+	addFont("Times-BoldItalic", gobolditalic.TTF)
 }
