@@ -272,6 +272,9 @@ func (c *Canvas) arc(comp vg.PathComp, style string) {
 	x := c.unit(comp.Pos.X)
 	y := c.unit(comp.Pos.Y)
 	c.doc.Arc(x, y, r, r, angle, beg, end, style)
+	x1 := comp.Pos.X + comp.Radius*vg.Length(math.Cos(comp.Start+comp.Angle))
+	y1 := comp.Pos.Y + comp.Radius*vg.Length(math.Sin(comp.Start+comp.Angle))
+	c.doc.MoveTo(c.pdfPointXY(x1, y1))
 }
 
 func (c *Canvas) pdfPointXY(x, y vg.Length) (float64, float64) {
