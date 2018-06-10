@@ -263,7 +263,7 @@ func (c *Canvas) pdfPath(path vg.Path, style string) {
 func (c *Canvas) arc(comp vg.PathComp, style string) {
 	x0 := comp.Pos.X + comp.Radius*vg.Length(math.Cos(comp.Start))
 	y0 := comp.Pos.Y + comp.Radius*vg.Length(math.Sin(comp.Start))
-	c.doc.LineTo(c.pdfPointXY(x0, y0))
+	c.doc.MoveTo(c.pdfPointXY(x0, y0))
 	r := c.unit(comp.Radius)
 	const deg = 180 / math.Pi
 	angle := comp.Angle * deg

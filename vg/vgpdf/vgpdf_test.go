@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"testing"
 
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/internal/cmpimg"
 	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/vg"
 	"gonum.org/v1/plot/vg/draw"
 	"gonum.org/v1/plot/vg/vgpdf"
 )
@@ -117,13 +119,77 @@ func TestEmbedFonts(t *testing.T) {
 	}
 }
 
+type MyCircleGlyph struct {
+	Start float64
+	Angle float64
+}
+
+func (gly MyCircleGlyph) DrawGlyph(c *draw.Canvas, sty draw.GlyphStyle, pt vg.Point) {
+	var p vg.Path
+	p.Move(vg.Point{X: pt.X + sty.Radius, Y: pt.Y})
+	p.Arc(pt, sty.Radius, gly.Start, gly.Angle)
+	p.Move(vg.Point{X: pt.X + sty.Radius, Y: pt.Y})
+	p.Close()
+	c.Fill(p)
+}
+
+type MyRingGlyph struct {
+	Start float64
+	Angle float64
+}
+
+func (gly MyRingGlyph) DrawGlyph(c *draw.Canvas, sty draw.GlyphStyle, pt vg.Point) {
+	c.SetLineStyle(draw.LineStyle{Color: sty.Color, Width: vg.Points(0.5)})
+	var p vg.Path
+	p.Move(vg.Point{X: pt.X + sty.Radius, Y: pt.Y})
+	p.Arc(pt, sty.Radius, gly.Start, gly.Angle)
+	p.Move(vg.Point{X: pt.X + sty.Radius, Y: pt.Y})
+	p.Close()
+	c.Stroke(p)
+}
+
 func TestArc(t *testing.T) {
-	pts := plotter.XYs{{1, 1}, {2, 2}}
-	scat, err := plotter.NewScatter(pts)
+	p, err := plot.New()
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err := plot.New()
+	for ia, angle := range []float64{math.Pi / 2, math.Pi, 3 * math.Pi / 2} {
+		for i, tc := range []struct {
+			x, y float64
+		}{
+			{1, 1},
+			{1, 2},
+			{1, 3},
+			{1, 4},
+			{1, 5},
+			{1, 6},
+			{1, 7},
+			{1, 8},
+			{1, 9},
+			{1, 10},
+			{1, 11},
+			{1, 12},
+		} {
+			pts1 := plotter.XYs{{tc.x + float64(ia), tc.y}}
+			sca1, err := plotter.NewScatter(pts1)
+			if err != nil {
+				t.Fatalf("could not create scatter-1 for %v: %v", tc, err)
+			}
+			sca1.Shape = MyCircleGlyph{float64(i) * math.Pi / 6.0, angle}
+			p.Add(sca1)
+
+			pts2 := plotter.XYs{{tc.x + float64(ia) + 0.5, tc.y}}
+			sca2, err := plotter.NewScatter(pts2)
+			if err != nil {
+				t.Fatalf("could not create scatter-2 for %v: %v", tc, err)
+			}
+			sca2.Shape = MyRingGlyph{float64(i) * math.Pi / 6.0, angle}
+			p.Add(sca2)
+		}
+	}
+
+	pts := plotter.XYs{{1, 0}, {2, 0}}
+	scat, err := plotter.NewScatter(pts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,6 +199,8 @@ func TestArc(t *testing.T) {
 
 	c.EmbedFonts(false)
 	p.Draw(draw.New(c))
+	p.Save(500, 500, "arc.png")
+	p.Save(500, 500, "arc.pdf")
 
 	f, err := os.Create("testdata/arc.pdf")
 	if err != nil {
