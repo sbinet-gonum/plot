@@ -268,7 +268,7 @@ func (c *Canvas) arc(comp vg.PathComp, style string) {
 	const deg = 180 / math.Pi
 	angle := comp.Angle * deg
 	beg := comp.Start * deg
-	end := deg * (beg + angle)
+	end := beg + angle
 	x := c.unit(comp.Pos.X)
 	y := c.unit(comp.Pos.Y)
 	c.doc.Arc(x, y, r, r, angle, beg, end, style)
