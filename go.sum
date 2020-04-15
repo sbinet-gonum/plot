@@ -14,7 +14,9 @@ golang.org/x/exp v0.0.0-20180807140117-3d87b88a115f h1:9kQ594xxPWRNKfTOnPjPcgrIJ
 golang.org/x/exp v0.0.0-20180807140117-3d87b88a115f/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 h1:00VmoueYNlNz/aHIilyyQz/MHSqGoWJzpFv/HW8xpzI=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
+golang.org/x/tools v0.0.0-20180525024113-a5b4c53f6e8b h1:7tibmaEqrQYA+q6ri7NQjuxqSwechjtDHKq6/e85S38=
 golang.org/x/tools v0.0.0-20180525024113-a5b4c53f6e8b/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+golang.org/x/tools v0.0.0-20200415034506-5d8e1897c761 h1:FVw4lelfGRNPqB3C8qX1m+QyeM2vzToIwlFhEZX42y8=
 gonum.org/v1/gonum v0.0.0-20180816165407-929014505bf4 h1:nYxTaCPaVoJbxx+vMVnsFb6kw5+6aJCx52m/lmM/Vog=
 gonum.org/v1/gonum v0.0.0-20180816165407-929014505bf4/go.mod h1:Y+Yx5eoAFn32cQvJDxZx5Dpnq+c3wtXuadVZAcxbbBo=
 rsc.io/pdf v0.1.1 h1:k1MczvYDUvJBe93bYd7wrZLLUEcLZAuF824/I4e5Xr4=

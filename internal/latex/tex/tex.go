@@ -126,6 +126,10 @@ type Box struct {
 	depth  float64
 }
 
+func newBox(w, h, d float64) *Box {
+	return &Box{width: w, height: h, depth: d}
+}
+
 func (*Box) Kerning(next Node) float64 { return 0 }
 
 func (box *Box) Shrink() {
@@ -175,97 +179,13 @@ func (box *Box) vpackDims(width, height, depth *float64, stretch, shrink []float
 }
 
 // VBox is a box with a height but no width.
-type VBox struct {
-	size   int
-	height float64
-	depth  float64
-}
-
-func (*VBox) Kerning(next Node) float64 { return 0 }
-
-func (box *VBox) Shrink() {
-	box.size--
-	if box.size >= NUM_SIZE_LEVELS {
-		return
-	}
-	box.height *= SHRINK_FACTOR
-	box.depth *= SHRINK_FACTOR
-}
-
-func (box *VBox) Grow() {
-	box.size++
-	box.height *= GROW_FACTOR
-	box.depth *= GROW_FACTOR
-}
-
-func (*VBox) Render(x, y float64) {}
-
-// Width returns the width of this node.
-func (box *VBox) Width() float64 { return 0 }
-
-// Height returns the height of this node.
-func (box *VBox) Height() float64 { return box.height }
-
-// Depth returns the depth of this node.
-func (box *VBox) Depth() float64 { return box.depth }
-
-func (box *VBox) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	if math.IsInf(box.height, 0) || math.IsInf(box.depth, 0) {
-		return
-	}
-	*height = math.Max(*height, box.height)
-	*depth = math.Max(*depth, box.depth)
-}
-
-func (box *VBox) vpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	*height += *depth + box.height
-	*depth = box.depth
-	*width = math.Max(*width, 0)
+func VBox(h, d float64) *Box {
+	return newBox(0, h, d)
 }
 
 // HBox is a box with a width but no height nor depth.
-type HBox struct {
-	size  int
-	width float64
-}
-
-func (*HBox) Kerning(next Node) float64 { return 0 }
-
-func (box *HBox) Shrink() {
-	box.size--
-	if box.size >= NUM_SIZE_LEVELS {
-		return
-	}
-	box.width *= SHRINK_FACTOR
-}
-
-func (box *HBox) Grow() {
-	box.size++
-	box.width *= GROW_FACTOR
-}
-
-func (*HBox) Render(x, y float64) {}
-
-// Width returns the width of this node.
-func (box *HBox) Width() float64 { return box.width }
-
-// Height returns the height of this node.
-func (box *HBox) Height() float64 { return 0 }
-
-// Depth returns the depth of this node.
-func (box *HBox) Depth() float64 { return 0 }
-
-func (box *HBox) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	*width += box.width
-}
-
-func (box *HBox) vpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	*height += *depth
-	*depth = 0
-	if math.IsInf(box.width, 0) {
-		return
-	}
-	*width = math.Max(*width, box.width)
+func HBox(w float64) *Box {
+	return newBox(w, 0, 0)
 }
 
 // Char is a single character.
@@ -1185,8 +1105,6 @@ type Tree interface {
 
 var (
 	_ Node = (*Box)(nil)
-	_ Node = (*VBox)(nil)
-	_ Node = (*HBox)(nil)
 	_ Node = (*Char)(nil)
 	_ Node = (*Accent)(nil)
 	_ Node = (*List)(nil)
@@ -1200,8 +1118,6 @@ var (
 	_ Node = (*SubSuperCluster)(nil)
 
 	_ hpacker = (*Box)(nil)
-	_ hpacker = (*VBox)(nil)
-	_ hpacker = (*HBox)(nil)
 	_ hpacker = (*Char)(nil)
 	_ hpacker = (*Accent)(nil)
 	_ hpacker = (*List)(nil)
@@ -1215,8 +1131,6 @@ var (
 	_ hpacker = (*SubSuperCluster)(nil)
 
 	_ vpacker = (*Box)(nil)
-	_ vpacker = (*VBox)(nil)
-	_ vpacker = (*HBox)(nil)
 	_ vpacker = (*Char)(nil)
 	_ vpacker = (*Accent)(nil)
 	_ vpacker = (*List)(nil)
