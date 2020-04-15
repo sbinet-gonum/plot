@@ -649,11 +649,7 @@ func (rule *Rule) vpackDims(width, height, depth *float64, stretch, shrink []flo
 }
 
 // HRule is a horizontal rule.
-type HRule struct {
-	rule Rule
-}
-
-func NewHRule(state State, thickness float64) *HRule {
+func HRule(state State, thickness float64) *Rule {
 	if thickness < 0 {
 		thickness = state.UnderlineThickness()
 	}
@@ -661,65 +657,13 @@ func NewHRule(state State, thickness float64) *HRule {
 		height = 0.5 * thickness
 		depth  = 0.5 * thickness
 	)
-	return &HRule{
-		rule: *NewRule(math.Inf(+1), height, depth, state),
-	}
-}
-
-func (rule *HRule) Kerning(next Node) float64 { return rule.rule.Kerning(next) }
-func (rule *HRule) Shrink()                   { rule.rule.Shrink() }
-func (rule *HRule) Grow()                     { rule.rule.Grow() }
-func (rule *HRule) Render(x, y float64)       { rule.rule.Render(x, y) }
-
-// Width returns the width of this node.
-func (rule *HRule) Width() float64 { return rule.rule.Width() }
-
-// Height returns the height of this node.
-func (rule *HRule) Height() float64 { return rule.rule.Height() }
-
-// Depth returns the depth of this node.
-func (rule *HRule) Depth() float64 { return rule.rule.Depth() }
-
-func (rule *HRule) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	rule.rule.hpackDims(width, height, depth, stretch, shrink)
-}
-
-func (rule *HRule) vpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	rule.rule.vpackDims(width, height, depth, stretch, shrink)
+	return NewRule(math.Inf(+1), height, depth, state)
 }
 
 // VRule is a vertical rule.
-type VRule struct {
-	rule Rule
-}
-
-func NewVRule(state State) *VRule {
+func VRule(state State) *Rule {
 	thickness := state.UnderlineThickness()
-	return &VRule{
-		rule: *NewRule(thickness, math.Inf(+1), math.Inf(+1), state),
-	}
-}
-
-func (rule *VRule) Kerning(next Node) float64 { return rule.rule.Kerning(next) }
-func (rule *VRule) Shrink()                   { rule.rule.Shrink() }
-func (rule *VRule) Grow()                     { rule.rule.Grow() }
-func (rule *VRule) Render(x, y float64)       { rule.rule.Render(x, y) }
-
-// Width returns the width of this node.
-func (rule *VRule) Width() float64 { return rule.rule.Width() }
-
-// Height returns the height of this node.
-func (rule *VRule) Height() float64 { return rule.rule.Height() }
-
-// Depth returns the depth of this node.
-func (rule *VRule) Depth() float64 { return rule.rule.Depth() }
-
-func (rule *VRule) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	rule.rule.hpackDims(width, height, depth, stretch, shrink)
-}
-
-func (rule *VRule) vpackDims(width, height, depth *float64, stretch, shrink []float64) {
-	rule.rule.vpackDims(width, height, depth, stretch, shrink)
+	return NewRule(thickness, math.Inf(+1), math.Inf(+1), state)
 }
 
 type Glue struct {
@@ -1111,8 +1055,6 @@ var (
 	_ Node = (*HList)(nil)
 	_ Node = (*VList)(nil)
 	_ Node = (*Rule)(nil)
-	_ Node = (*HRule)(nil)
-	_ Node = (*VRule)(nil)
 	_ Node = (*Glue)(nil)
 	_ Node = (*Kern)(nil)
 	_ Node = (*SubSuperCluster)(nil)
@@ -1124,8 +1066,6 @@ var (
 	_ hpacker = (*HList)(nil)
 	_ hpacker = (*VList)(nil)
 	_ hpacker = (*Rule)(nil)
-	_ hpacker = (*HRule)(nil)
-	_ hpacker = (*VRule)(nil)
 	_ hpacker = (*Glue)(nil)
 	_ hpacker = (*Kern)(nil)
 	_ hpacker = (*SubSuperCluster)(nil)
@@ -1137,8 +1077,6 @@ var (
 	_ vpacker = (*HList)(nil)
 	_ vpacker = (*VList)(nil)
 	_ vpacker = (*Rule)(nil)
-	_ vpacker = (*HRule)(nil)
-	_ vpacker = (*VRule)(nil)
 	_ vpacker = (*Glue)(nil)
 	_ vpacker = (*Kern)(nil)
 	_ vpacker = (*SubSuperCluster)(nil)
