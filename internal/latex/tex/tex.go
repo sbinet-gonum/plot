@@ -107,6 +107,15 @@ type Node interface {
 
 	// Render renders the node at (x,y) on the canvas.
 	Render(x, y float64)
+
+	// Width returns the width of this node.
+	Width() float64
+
+	// Height returns the height of this node.
+	Height() float64
+
+	// Depth returns the depth of this node.
+	Depth() float64
 }
 
 // Box is a node with a physical location
@@ -137,6 +146,15 @@ func (box *Box) Grow() {
 }
 
 func (*Box) Render(x, y float64) {}
+
+// Width returns the width of this node.
+func (box *Box) Width() float64 { return box.width }
+
+// Height returns the height of this node.
+func (box *Box) Height() float64 { return box.height }
+
+// Depth returns the depth of this node.
+func (box *Box) Depth() float64 { return box.depth }
 
 func (box *Box) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	*width += box.width
@@ -182,6 +200,15 @@ func (box *VBox) Grow() {
 
 func (*VBox) Render(x, y float64) {}
 
+// Width returns the width of this node.
+func (box *VBox) Width() float64 { return 0 }
+
+// Height returns the height of this node.
+func (box *VBox) Height() float64 { return box.height }
+
+// Depth returns the depth of this node.
+func (box *VBox) Depth() float64 { return box.depth }
+
 func (box *VBox) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	if math.IsInf(box.height, 0) || math.IsInf(box.depth, 0) {
 		return
@@ -218,6 +245,15 @@ func (box *HBox) Grow() {
 }
 
 func (*HBox) Render(x, y float64) {}
+
+// Width returns the width of this node.
+func (box *HBox) Width() float64 { return box.width }
+
+// Height returns the height of this node.
+func (box *HBox) Height() float64 { return 0 }
+
+// Depth returns the depth of this node.
+func (box *HBox) Depth() float64 { return 0 }
 
 func (box *HBox) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	*width += box.width
@@ -281,6 +317,15 @@ func (box *Char) Grow() {
 
 func (c Char) Render(x, y float64) { panic("not implemented") }
 
+// Width returns the width of this node.
+func (c *Char) Width() float64 { return c.width }
+
+// Height returns the height of this node.
+func (c *Char) Height() float64 { return c.height }
+
+// Depth returns the depth of this node.
+func (box *Char) Depth() float64 { return box.depth }
+
 func (c Char) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	*width += c.width
 	*height = math.Max(*height, c.height)
@@ -312,6 +357,15 @@ func (box *Accent) Grow() {
 }
 
 func (box *Accent) Render(x, y float64) { panic("not implemented") }
+
+// Width returns the width of this node.
+func (box *Accent) Width() float64 { return box.char.width }
+
+// Height returns the height of this node.
+func (box *Accent) Height() float64 { return box.char.height }
+
+// Depth returns the depth of this node.
+func (box *Accent) Depth() float64 { return box.char.depth }
 
 func (box *Accent) updateMetrics() { panic("not implemented") }
 
@@ -374,6 +428,20 @@ func (lst *List) Grow() {
 func (lst *List) Render(x, y float64) {
 	lst.box.Render(x, y)
 }
+
+// Width returns the width of this node.
+func (lst *List) Width() float64 { return lst.box.Width() }
+
+// Height returns the height of this node.
+func (lst *List) Height() float64 { return lst.box.Height() }
+
+// Depth returns the depth of this node.
+func (lst *List) Depth() float64 { return lst.box.Depth() }
+
+func (lst *List) Nodes() []Node    { return lst.children }
+func (lst *List) GlueOrder() int   { return lst.glue.order }
+func (lst *List) GlueSign() int    { return lst.glue.sign }
+func (lst *List) GlueSet() float64 { return lst.glue.set }
 
 func (lst *List) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	*width += lst.box.width
@@ -497,6 +565,20 @@ func (lst *HList) Shrink()                   { lst.lst.Shrink() }
 func (lst *HList) Grow()                     { lst.lst.Grow() }
 func (lst *HList) Render(x, y float64)       { lst.lst.Render(x, x) }
 
+// Width returns the width of this node.
+func (lst *HList) Width() float64 { return lst.lst.Width() }
+
+// Height returns the height of this node.
+func (lst *HList) Height() float64 { return lst.lst.Height() }
+
+// Depth returns the depth of this node.
+func (lst *HList) Depth() float64 { return lst.lst.Depth() }
+
+func (lst *HList) Nodes() []Node    { return lst.lst.Nodes() }
+func (lst *HList) GlueOrder() int   { return lst.lst.GlueOrder() }
+func (lst *HList) GlueSign() int    { return lst.lst.GlueSign() }
+func (lst *HList) GlueSet() float64 { return lst.lst.GlueSet() }
+
 func (lst *HList) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	lst.lst.hpackDims(width, height, depth, stretch, shrink)
 }
@@ -577,6 +659,20 @@ func (lst *VList) Shrink()                   { lst.lst.Shrink() }
 func (lst *VList) Grow()                     { lst.lst.Grow() }
 func (lst *VList) Render(x, y float64)       { lst.lst.Render(x, y) }
 
+// Width returns the width of this node.
+func (lst *VList) Width() float64 { return lst.lst.Width() }
+
+// Height returns the height of this node.
+func (lst *VList) Height() float64 { return lst.lst.Height() }
+
+// Depth returns the depth of this node.
+func (lst *VList) Depth() float64 { return lst.lst.Depth() }
+
+func (lst *VList) Nodes() []Node    { return lst.lst.Nodes() }
+func (lst *VList) GlueOrder() int   { return lst.lst.GlueOrder() }
+func (lst *VList) GlueSign() int    { return lst.lst.GlueSign() }
+func (lst *VList) GlueSet() float64 { return lst.lst.GlueSet() }
+
 func (lst *VList) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	lst.lst.hpackDims(width, height, depth, stretch, shrink)
 }
@@ -596,7 +692,7 @@ func (lst *VList) vpackDims(width, height, depth *float64, stretch, shrink []flo
 // running in a VList.
 type Rule struct {
 	box Box
-	out backend
+	out Backend
 }
 
 func NewRule(w, h, d float64, state State) *Rule {
@@ -614,6 +710,15 @@ func (rule *Rule) Kerning(next Node) float64 { return rule.box.Kerning(next) }
 func (rule *Rule) Shrink()                   { rule.box.Shrink() }
 func (rule *Rule) Grow()                     { rule.box.Grow() }
 func (rule *Rule) Render(x, y float64)       { rule.box.Render(x, y) }
+
+// Width returns the width of this node.
+func (rule *Rule) Width() float64 { return rule.box.Width() }
+
+// Height returns the height of this node.
+func (rule *Rule) Height() float64 { return rule.box.Height() }
+
+// Depth returns the depth of this node.
+func (rule *Rule) Depth() float64 { return rule.box.Depth() }
 
 func (rule *Rule) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	rule.box.hpackDims(width, height, depth, stretch, shrink)
@@ -646,6 +751,15 @@ func (rule *HRule) Shrink()                   { rule.rule.Shrink() }
 func (rule *HRule) Grow()                     { rule.rule.Grow() }
 func (rule *HRule) Render(x, y float64)       { rule.rule.Render(x, y) }
 
+// Width returns the width of this node.
+func (rule *HRule) Width() float64 { return rule.rule.Width() }
+
+// Height returns the height of this node.
+func (rule *HRule) Height() float64 { return rule.rule.Height() }
+
+// Depth returns the depth of this node.
+func (rule *HRule) Depth() float64 { return rule.rule.Depth() }
+
 func (rule *HRule) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	rule.rule.hpackDims(width, height, depth, stretch, shrink)
 }
@@ -670,6 +784,15 @@ func (rule *VRule) Kerning(next Node) float64 { return rule.rule.Kerning(next) }
 func (rule *VRule) Shrink()                   { rule.rule.Shrink() }
 func (rule *VRule) Grow()                     { rule.rule.Grow() }
 func (rule *VRule) Render(x, y float64)       { rule.rule.Render(x, y) }
+
+// Width returns the width of this node.
+func (rule *VRule) Width() float64 { return rule.rule.Width() }
+
+// Height returns the height of this node.
+func (rule *VRule) Height() float64 { return rule.rule.Height() }
+
+// Depth returns the depth of this node.
+func (rule *VRule) Depth() float64 { return rule.rule.Depth() }
 
 func (rule *VRule) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	rule.rule.hpackDims(width, height, depth, stretch, shrink)
@@ -738,6 +861,15 @@ func (g *Glue) Grow() {
 }
 
 func (g *Glue) Render(x, y float64) {}
+
+// Width returns the width of this node.
+func (g *Glue) Width() float64 { return g.width }
+
+// Height returns the height of this node.
+func (g *Glue) Height() float64 { return 0 }
+
+// Depth returns the depth of this node.
+func (g *Glue) Depth() float64 { return 0 }
 
 func (g *Glue) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	*width += g.width
@@ -809,6 +941,15 @@ func (k *Kern) Grow() {
 
 func (k *Kern) Render(x, y float64) {}
 
+// Width returns the width of this node.
+func (k *Kern) Width() float64 { return k.width }
+
+// Height returns the height of this node.
+func (k *Kern) Height() float64 { return 0 }
+
+// Depth returns the depth of this node.
+func (k *Kern) Depth() float64 { return 0 }
+
 func (k *Kern) hpackDims(width, height, depth *float64, stretch, shrink []float64) {
 	*width += k.width
 }
@@ -825,6 +966,201 @@ type SubSuperCluster struct {
 	super   interface{} // FIXME
 }
 
+// Ship boxes to output once boxes have been set up.
+//
+// Since boxes can be inside of boxes inside of boxes... the main work of
+// Ship is done by two mutually recursive routines, hlistOut and vlistOut,
+// which traverse the HList and VList nodes inside of horizontal and vertical
+// boxes.
+type Ship struct {
+	maxPush int // deepest nesting of push commands, so far.
+	cur     struct {
+		s int
+		v float64
+		h float64
+	}
+	off struct {
+		h float64
+		v float64
+	}
+}
+
+func (ship *Ship) Call(ox, oy float64, box Tree) {
+	ship.maxPush = 0
+	ship.cur.s = 0
+	ship.cur.v = 0
+	ship.cur.h = 0
+	ship.off.h = ox
+	ship.off.v = oy + box.Height()
+	ship.hlistOut(box)
+}
+
+func (ship *Ship) hlistOut(box Tree) {
+	var (
+		curG      int
+		curGlue   float64
+		glueOrder = box.GlueOrder()
+		glueSign  = box.GlueSign()
+		baseLine  = ship.cur.v
+	)
+
+	ship.cur.s++
+	ship.maxPush = maxInt(ship.cur.s, ship.maxPush)
+
+	for _, node := range box.Nodes() {
+		switch node := node.(type) {
+		case *Char:
+			node.Render(ship.cur.h+ship.off.h, ship.cur.v+ship.off.v)
+			ship.cur.h += node.Width()
+		case *Accent:
+			node.Render(ship.cur.h+ship.off.h, ship.cur.v+ship.off.v)
+			ship.cur.h += node.Width()
+		case *Kern:
+			ship.cur.h += node.Width()
+		case *HList:
+			// node623
+			switch len(node.Nodes()) {
+			case 0:
+				ship.cur.h += node.Width()
+			default:
+				edge := ship.cur.h
+				ship.cur.v = baseLine + node.lst.shift
+				ship.hlistOut(node)
+				ship.cur.h = edge + node.Width()
+				ship.cur.v = baseLine
+			}
+		case *VList:
+			// node623
+			switch len(node.Nodes()) {
+			case 0:
+				ship.cur.h += node.Width()
+			default:
+				edge := ship.cur.h
+				ship.cur.v = baseLine + node.lst.shift
+				ship.vlistOut(node)
+				ship.cur.h = edge + node.Width()
+				ship.cur.v = baseLine
+			}
+		case *Glue:
+			// node625
+			ruleWidth := node.width - float64(curG)
+			if glueSign != 0 { // normal
+				switch {
+				case glueSign == 1: // stretching
+					if node.stretchOrder == glueOrder {
+						curGlue += node.stretch
+						curG = int(math.Round(clamp(box.GlueSet() * curGlue)))
+					}
+				case node.shrinkOrder == glueOrder: // shrinking
+					curGlue += node.shrink
+					curG = int(math.Round(clamp(box.GlueSet() * curGlue)))
+				}
+			}
+			ruleWidth += float64(curG)
+			ship.cur.h += ruleWidth
+		case Node:
+			// node624
+		}
+	}
+	ship.cur.s--
+}
+
+func (ship *Ship) vlistOut(box Tree) {
+	var (
+		curG      int
+		curGlue   float64
+		glueOrder = box.GlueOrder()
+		glueSign  = box.GlueSign()
+		leftEdge  = ship.cur.h
+	)
+
+	ship.cur.s++
+	ship.maxPush = maxInt(ship.cur.s, ship.maxPush)
+	ship.cur.v -= box.Height()
+
+	for _, node := range box.Nodes() {
+		switch node := node.(type) {
+		case *Kern:
+			ship.cur.v += node.Width()
+		case *HList:
+			switch len(node.Nodes()) {
+			case 0:
+				ship.cur.v += node.Height() + node.Depth()
+			default:
+				ship.cur.v += node.Height()
+				ship.cur.h = leftEdge + node.lst.shift
+				curV := ship.cur.v
+				node.lst.box.width = box.Width()
+				ship.hlistOut(node)
+				ship.cur.v = curV + node.Depth()
+				ship.cur.h = leftEdge
+			}
+		case *VList:
+			switch len(node.Nodes()) {
+			case 0:
+				ship.cur.v += node.Height() + node.Depth()
+			default:
+				ship.cur.v += node.Height()
+				ship.cur.h = leftEdge + node.lst.shift
+				curV := ship.cur.v
+				node.lst.box.width = box.Width()
+				ship.vlistOut(node)
+				ship.cur.v = curV + node.Depth()
+				ship.cur.h = leftEdge
+			}
+
+		case *Glue:
+			ruleHeight := node.width - float64(curG)
+			if glueSign != 0 { // normal
+				switch {
+				case glueSign == 1: // stretching
+					if node.stretchOrder == glueOrder {
+						curGlue += node.stretch
+						curG = int(math.Round(clamp(box.GlueSet() * curGlue)))
+					}
+				case glueOrder == node.shrinkOrder: // shrinking
+					curGlue += node.shrink
+					curG = int(math.Round(clamp(box.GlueSet() * curGlue)))
+				}
+			}
+			ruleHeight += float64(curG)
+			ship.cur.v += ruleHeight
+		case *Char:
+			panic("tex: Char node found in vlist")
+		case *Accent:
+			panic("tex: Accent node found in vlist")
+		case Node:
+			var (
+				ruleHeight = node.Height()
+				ruleDepth  = node.Depth()
+				ruleWidth  = node.Width()
+			)
+			if math.IsInf(ruleWidth, 0) {
+				ruleWidth = box.Width()
+			}
+			ruleHeight += ruleDepth
+			if ruleHeight > 0 && ruleDepth > 0 {
+				ship.cur.v += ruleHeight
+				type renderXYWH interface {
+					render(x, y, w, h float64)
+				}
+				if p, ok := node.(renderXYWH); ok {
+					p.render(
+						ship.cur.h+ship.off.h,
+						ship.cur.v+ship.off.v,
+						ruleWidth, ruleHeight,
+					)
+				}
+			}
+		}
+	}
+	ship.cur.s--
+}
+
+var (
+	ship = (&Ship{}).Call
+)
+
 type hpacker interface {
 	hpackDims(width, height, depth *float64, stretch, shrink []float64)
 }
@@ -835,12 +1171,16 @@ type vpacker interface {
 
 type State struct{}
 
-func (State) Backend() backend            { panic("not implemented") }
+func (State) Backend() Backend            { panic("not implemented") }
 func (State) UnderlineThickness() float64 { panic("not implemented") }
 
-type backend interface {
-	RenderGlyph()
-	RenderRectFilled(x1, y1, x2, y2 float64)
+type Tree interface {
+	Node
+
+	Nodes() []Node
+	GlueOrder() int
+	GlueSign() int
+	GlueSet() float64
 }
 
 var (
@@ -888,4 +1228,8 @@ var (
 	_ vpacker = (*Glue)(nil)
 	_ vpacker = (*Kern)(nil)
 	_ vpacker = (*SubSuperCluster)(nil)
+
+	_ Tree = (*List)(nil)
+	_ Tree = (*HList)(nil)
+	_ Tree = (*VList)(nil)
 )
