@@ -11,6 +11,7 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 	golang.org/x/image v0.0.0-20200618115811-c13761719519
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 	gonum.org/v1/gonum v0.7.0
 	rsc.io/pdf v0.1.1
 )
