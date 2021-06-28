@@ -170,6 +170,35 @@ func (l *Legend) Rectangle(c draw.Canvas) vg.Rectangle {
 	return r
 }
 
+func (l *Legend) GlyphBoxes(c draw.Canvas, p *Plot) []GlyphBox {
+	var (
+		iconx = c.Min.X
+		sty   = l.TextStyle
+		em    = sty.Rectangle(" ")
+		enth  = l.entryHeight()
+		desc  = sty.FontExtents().Descent
+		xoff  = iconx + l.ThumbnailWidth + em.Max.X
+		yoff  = c.Max.Y - enth - desc
+	)
+
+	if !l.Left {
+		iconx = c.Max.X - l.ThumbnailWidth
+		xoff = iconx - em.Max.X
+	}
+	xoff += l.XOffs
+
+	if !l.Top {
+		yoff = c.Min.Y + (enth+l.Padding)*(vg.Length(len(l.entries))-1)
+	}
+	yoff += l.YOffs
+
+	return []GlyphBox{{
+		X:         xoff.Points(), // FIXME(sbinet): want data coordinates
+		Y:         yoff.Points(), // FIXME(sbinet): want data coordinates
+		Rectangle: l.Rectangle(c),
+	}}
+}
+
 // entryHeight returns the height of the tallest legend
 // entry text.
 func (l *Legend) entryHeight() (height vg.Length) {
