@@ -16,6 +16,7 @@ import (
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
 	"gonum.org/v1/plot/vg/draw"
+	"gonum.org/v1/plot/vg/vgimg"
 	"gonum.org/v1/plot/vg/vgtk"
 )
 
@@ -62,13 +63,13 @@ func Example() {
 		panic(err)
 	}
 
-	cnv := vgtk.New(20*vg.Centimeter, 15*vg.Centimeter, tk.Background(tk.Red))
+	cnv := vgimg.New(20*vg.Centimeter, 15*vg.Centimeter)
+	//, tk.Background(tk.Red))
 	cnv.DrawImage(vg.Rectangle{Max: vg.Point{220, 125}}.Add(vg.Point{50, 275}), pic)
 	p.Draw(draw.New(cnv))
-	cnv.Flush()
 
 	tk.Pack(
-		tk.TLabel(tk.Image(cnv)),
+		tk.TLabel(vgtk.Canvas(cnv)),
 		tk.TExit(),
 		tk.Padx("1m"), tk.Pady("2m"), tk.Ipadx("1m"), tk.Ipady("1m"),
 	)
